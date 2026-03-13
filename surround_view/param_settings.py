@@ -1,0 +1,90 @@
+import os
+import cv2
+
+
+# Four-camera runtime names (current stitch pipeline is 4-way).
+camera_names = ["front", "back", "left", "right"]
+
+# Six-camera names used for calibration/projection-map preparation.
+camera_names_6 = ["front", "front_left", "front_right", "left", "right", "back"]
+all_camera_names = list(dict.fromkeys(camera_names + camera_names_6))
+
+# --------------------------------------------------------------------
+# (shift_width, shift_height): how far away the birdview looks outside
+# of the calibration pattern in horizontal and vertical directions
+shift_w = 300
+shift_h = 300
+
+# size of the gap between the calibration pattern and the car
+# in horizontal and vertical directions
+inn_shift_w = 0
+inn_shift_h = 0
+
+# calibration cloth size (cm): 4.5m x 7.0m
+calibration_w = 450
+calibration_h = 700
+
+# center hole/boat footprint hint (cm): 2.1m x 4.0m
+boat_w = 210
+boat_h = 400
+
+# total width/height of the stitched image
+total_w = calibration_w + 2 * shift_w
+total_h = calibration_h + 2 * shift_h
+
+# four corners of the rectangular region occupied by the car
+# top-left (x_left, y_top), bottom-right (x_right, y_bottom)
+xl = shift_w + (calibration_w - boat_w) // 2 + inn_shift_w
+xr = total_w - xl
+yt = shift_h + (calibration_h - boat_h) // 2 + inn_shift_h
+yb = total_h - yt
+# --------------------------------------------------------------------
+
+project_shapes = {
+    "front": (total_w, yt),
+    "front_left": (total_w, yt),
+    "front_right": (total_w, yt),
+    "back":  (total_w, yt),
+    "left":  (total_h, xl),
+    "right": (total_h, xl)
+}
+
+# pixel locations of the four points to be chosen.
+# you must click these pixels in the same order when running
+# the get_projection_map.py script
+project_keypoints = {
+    "front": [(shift_w + 90, shift_h),
+              (shift_w + 360, shift_h),
+              (shift_w + 90, shift_h + 160),
+              (shift_w + 360, shift_h + 160)],
+
+    # Initial templates for 6-way calibration. Fine-tune during
+    # run_get_projection_maps.py by selecting consistent 4 points.
+    "front_left": [(shift_w + 20, shift_h + 20),
+                   (shift_w + 250, shift_h + 20),
+                   (shift_w + 80, shift_h + 220),
+                   (shift_w + 320, shift_h + 220)],
+
+    "front_right": [(shift_w + 200, shift_h + 20),
+                    (shift_w + calibration_w - 20, shift_h + 20),
+                    (shift_w + 130, shift_h + 220),
+                    (shift_w + calibration_w - 80, shift_h + 220)],
+
+    "back":  [(shift_w + 90, shift_h),
+              (shift_w + 360, shift_h),
+              (shift_w + 90, shift_h + 160),
+              (shift_w + 360, shift_h + 160)],
+
+    "left":  [(shift_h + 220, shift_w),
+              (shift_h + 740, shift_w),
+              (shift_h + 220, shift_w + 160),
+              (shift_h + 740, shift_w + 160)],
+
+    "right": [(shift_h + 140, shift_w),
+              (shift_h + 660, shift_w),
+              (shift_h + 140, shift_w + 160),
+              (shift_h + 660, shift_w + 160)]
+}
+
+car_image = cv2.imread(os.path.join(os.getcwd(), "images", "car.png"))
+car_image = cv2.resize(car_image, (xr - xl, yb - yt))
