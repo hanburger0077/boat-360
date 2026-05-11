@@ -91,3 +91,7 @@ ENV/
 
 *-data.inc
 src/**/*.py.bak
+
+# macOS
+.DS_Store
+**/.DS_Store

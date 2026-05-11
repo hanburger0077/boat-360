@@ -28,6 +28,8 @@ def main():
     birdview.copy_car_image()
     ret = display_image("BirdView Result", birdview.image)
     if ret > 0:
+        os.makedirs(os.path.join(os.getcwd(), "outputs"), exist_ok=True)
+        cv2.imwrite(os.path.join(os.getcwd(), "outputs", "birdview.png"), birdview.image)
         Image.fromarray((Gmat * 255).astype(np.uint8)).save("weights.png")
         Image.fromarray(Mmat.astype(np.uint8)).save("masks.png")
 

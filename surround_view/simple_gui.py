@@ -84,12 +84,11 @@ class PointSelector(object):
         cv2.namedWindow(self.title)
         cv2.setMouseCallback(self.title, self.onclick, param=())
         cv2.imshow(self.title, self.image)
+        # Don't rely on getWindowProperty() for window readiness on macOS:
+        # it can return negative values even when the window is visible.
+        cv2.waitKey(1)
 
         while True:
-            click = cv2.getWindowProperty(self.title, cv2.WND_PROP_AUTOSIZE)
-            if click < 0:
-                return False
-
             key = cv2.waitKey(1) & 0xFF
 
             # press q to return False
@@ -104,7 +103,11 @@ class PointSelector(object):
                     self.draw_image()
 
             # press Enter to confirm
-            if key == 13:
+            # macOS sometimes reports Enter as 10 (LF) instead of 13 (CR)
+            if key in (10, 13):
+                if len(self.keypoints) != 4:
+                    print("Need 4 points, currently have {}.".format(len(self.keypoints)))
+                    continue
                 return True
 
     def create_mask_from_pixels(self, pixels, image_shape):
